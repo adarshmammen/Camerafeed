@@ -9,6 +9,7 @@ import json
 
 from camerafeed.peopletracker import PeopleTracker
 from camerafeed.tripline import Tripline
+from flask import Flask, render_template, Response
 
 
 class CameraFeed:
@@ -49,6 +50,9 @@ class CameraFeed:
         self.crop_y2 = config.getint('video_source', 'frame_y2')
         self.max_width = config.getint('video_source', 'max_width')
         self.b_and_w = config.getboolean('video_source', 'b_and_w')
+
+        # streaming
+        self.stream_write = True
 
         # hog settings
         self.hog_win_stride = config.getint('hog', 'win_stride')
@@ -108,7 +112,7 @@ class CameraFeed:
             time.sleep(1)  # let camera warm up
 
         else:
-            self.camera = cv2.VideoCapture(self.source)
+            self.camera = cv2.VideoCapture(0)
 
         # setup detectors
         self.hog = cv2.HOGDescriptor()
@@ -131,7 +135,6 @@ class CameraFeed:
 
                 rval, frame = self.camera.read()
                 self.process(frame)
-
                 if self.quit_after_first_frame or cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
@@ -153,6 +156,12 @@ class CameraFeed:
         frame = self.apply_mog(frame)
         frame = self.handle_the_people(frame)
         frame = self.render_hud(frame)
+
+        # This will add a stream for the browser, currently using Flask
+        if self.stream_write:
+            f = open("stream.jpg",'w+')
+            cv2.imwrite('stream.jpg', frame)
+            f.close()
 
         if self.show_window:
             cv2.imshow('Camerafeed', frame)

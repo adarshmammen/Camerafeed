@@ -10,3 +10,4 @@ args = parser.parse_args()
 # start app
 camerafeed = CameraFeed()
 camerafeed.go_config(config_path=args.config_path)
+
